@@ -8,7 +8,14 @@ Although a LuaCompiler class is provided, modules can be compiled individually.
 If you have library modules (typically these will have to be included in each of the modules)
 they should be run for each including modules just for once.
 
-Example usage: 
+You can use AddUserFunction to watch inner values while executing. for example; 
+string expr = $"return ({a})";
+fNode = module.AddUserFunction(expr);
+
+Now you can call fNode.Update() and inquire its ReturnValue.
+
+Example usage: Create your own ScriptModule class deriving from ScriptModuleBase ;
+(Dont worry about CodeTypeEnum, it is just an int value to distinguish module types)
 
 LibraryModule libModule = new LibraryModule("libModule")
             {
