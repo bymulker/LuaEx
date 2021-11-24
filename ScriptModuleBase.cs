@@ -14,6 +14,8 @@ namespace LuaEx
 
         private readonly object lckObj = new object();
 
+        public Guid ID { get; } = Guid.NewGuid();
+
         #region Compilation
 
         public bool IsCompiled { get; private set; } = false;
@@ -343,7 +345,7 @@ namespace LuaEx
 
         public abstract void Write(XmlWriter wr, string localName, SaveOptions opts);
 
-        public bool Equals(ScriptModuleBase other)
+        public bool SameAs(ScriptModuleBase other)
         {
             if (other == null)
             {
@@ -352,6 +354,16 @@ namespace LuaEx
 
             return CodeType == other.CodeType &&
                    Name.Equals(other.Name, StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        public bool Equals(ScriptModuleBase other)
+        {
+            if (other == null)
+            {
+                return false;
+            }
+
+            return ID.Equals(other.ID);
         }
 
         public override int GetHashCode()
