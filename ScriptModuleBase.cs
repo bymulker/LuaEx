@@ -24,6 +24,10 @@ namespace LuaEx
 
         private readonly List<FuncNode> Funcs = new List<FuncNode>();
 
+        /// <summary>
+        /// Set by user for debugging purposes etc. They are run immediately after
+        /// normal functs.
+        /// </summary>
         private readonly List<FuncNode> UserFuncs = new List<FuncNode>();
 
         public DynValue LibraryFunction(string name)
