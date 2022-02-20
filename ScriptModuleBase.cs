@@ -326,6 +326,8 @@ namespace LuaEx
 
         public Script Script { get; private set; } = null;
 
+        public Table Globals { get => Script.Globals; }
+
         public SourceCode SourceCode => Script.GetSourceCode(CodeFriendlyName);
 
         public bool IsEmpty => string.IsNullOrEmpty(Code);
