@@ -1,5 +1,6 @@
 ﻿using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Debugging;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -110,9 +111,14 @@ namespace LuaEx
                 }
                 return ret;
             }
+            catch (ScriptRuntimeException srex)
+            {
+                Log.Error(srex, "Script Error while executing module {ModuleName} : {DecMessage}"
+                    , Name, srex.DecoratedMessage);
+            }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error occurred while executing module {Name} : {ex.Message}");
+                Log.Error(ex, "Unhandled Error while executing module {ModuleName}", Name);
             }
 
             return DynValue.Nil;
