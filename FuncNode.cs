@@ -1,5 +1,6 @@
 ﻿using MoonSharp.Interpreter;
 using MvvmHelpers;
+using System;
 using System.Diagnostics;
 
 namespace LuaEx
@@ -33,7 +34,18 @@ namespace LuaEx
 
         public void Update()
         {
-            ReturnValue = Function.Call();
+            try
+            {
+                ReturnValue = Function.Call();
+            }
+            catch (InterpreterException syex)
+            {
+                Trace.WriteLine($"Error executing module function:{syex.DecoratedMessage} at module: {Module.Name}");
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"Error executing module function:{ex.Message} at module: {Module.Name}");
+            }
         }
 
     }
