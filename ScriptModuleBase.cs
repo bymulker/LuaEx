@@ -1,5 +1,6 @@
 ﻿using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Debugging;
+using MoonSharp.Interpreter.Loaders;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -178,7 +179,7 @@ namespace LuaEx
             }
         }
 
-        protected virtual void Compile(Script script, ref List<FuncNode> funcs,
+        protected virtual void Compile(ScriptModuleBase targetModule, ref List<FuncNode> funcs,
                                        out string errMsg)
         {
             lock (lckObj)
@@ -187,13 +188,14 @@ namespace LuaEx
 
                 try
                 {
-                    Script s = script ?? this.Script;
+                    ScriptModuleBase m = targetModule ?? this;
                     foreach (ScriptModuleBase module in Modules)
                     {
-                        module.Compile(s, ref funcs, out errMsg);
+                        module.Compile(m, ref funcs, out errMsg);
                     }
 
-                    funcs.Add(new FuncNode(s.LoadString(ManageCode(), s.Globals, CodeFriendlyName), this));
+                    funcs.Add(new FuncNode(m.Script.LoadString(ManageCode(), 
+                                 m.Context, CodeFriendlyName), this));
 
                 }
                 catch (SyntaxErrorException e)
@@ -225,8 +227,8 @@ namespace LuaEx
                         mdl.CompileAsLibrary(module, ref libFuncs, out errMsg);
                     }
 
-                    Script s = module.Script;
-                    libFuncs.Add(new FuncNode(s.LoadString(ManageCode(), s.Globals, CodeFriendlyName), this));
+                    libFuncs.Add(new FuncNode(module.Script.LoadString(ManageCode(), 
+                        module.Context, CodeFriendlyName), this));
                 }
                 catch (SyntaxErrorException e)
                 {
@@ -295,17 +297,8 @@ namespace LuaEx
         {
             return UserFuncs.Remove(fNode);
         }
-
-        #endregion
-
-        public ScriptModuleBase(string name, int code_type, string code_friendly_name = null)
-            : base(name)
-        {
-            CodeFriendlyName = string.IsNullOrEmpty(code_friendly_name) ?
-                                $"{name}_{code_type}" : code_friendly_name;
-            CodeType = code_type;
-            InitializeScript();
-        }
+               
+        #endregion        
 
         public string CodeFriendlyName { get; }
 
@@ -330,29 +323,80 @@ namespace LuaEx
             }
         }
 
-        public Script Script { get; private set; } = null;
+        protected Script Script { get; private set; } = null;
 
         public Table Globals { get => Script.Globals; }
+
+        protected Table Runtime { get; private set; } = null;
+
+        public Table Context => Runtime ?? Globals;
 
         public SourceCode SourceCode => Script.GetSourceCode(CodeFriendlyName);
 
         public bool IsEmpty => string.IsNullOrEmpty(Code);
 
-        public void Clear()
+        public ScriptModuleBase(string name, int code_type, bool use_seperate_runtime, string code_friendly_name = null)
+            : base(name)
         {
-            InitializeScript();
+            CodeFriendlyName = string.IsNullOrEmpty(code_friendly_name) ?
+                                $"{name}_{code_type}" : code_friendly_name;
+            CodeType = code_type;            
+
+            InitializeScript(use_seperate_runtime);
         }
 
-        private void InitializeScript()
+        public void Clear()
+        {
+            InitializeScript(Runtime != null);
+        }
+
+        private void InitializeScript(bool use_seperate_runtime)
         {
             Script = new Script();
             Script.Registry["Module"] = Name;
+
+            if (use_seperate_runtime)
+            {
+                Runtime = new Table(Script);
+            }
+
             ClearCompilation();
         }
 
         protected virtual string ManageCode()
         {
             return Code;
+        }
+
+        public void SetModulePaths(string[] paths)
+        {
+            ((ScriptLoaderBase)Script.Options.ScriptLoader).ModulePaths = paths;
+        }
+
+        public void SetPrintDebugAction(Action<string> prntAction)
+        {
+            Script.Options.DebugPrint = prntAction;
+        }
+
+        /// <summary>
+        /// Warning !: Use at one time initialization! As this routine uses [DoString] function using 
+        /// in a recurring task leads to memory leak.
+        /// </summary>
+        /// <param name="script"></param>
+        /// <param name="glbContext"></param>
+        public void RegisterCode(string code)
+        {
+            Script.DoString(code, Context);
+        }
+
+        public DynamicExpression CreateDynamicExpression(string expr)
+        {
+            return Script.CreateDynamicExpression(expr);
+        }
+
+        public DynamicExpression CreateConstDynamicExpression(string expr, DynValue constant)
+        {
+            return Script.CreateConstantDynamicExpression(expr, constant);
         }
 
         public abstract void Write(XmlWriter wr, string localName, SaveOptions opts);
