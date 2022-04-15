@@ -2,6 +2,7 @@
 using MvvmHelpers;
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace LuaEx
 {
@@ -46,7 +47,7 @@ namespace LuaEx
             {
                 Trace.WriteLine($"Error executing module function:{ex.Message} at module: {Module.Name}");
             }
-        }
+        }        
 
     }
 }
