@@ -8,14 +8,23 @@ Although a LuaCompiler class is provided, modules can be compiled individually.
 If you have library modules (typically these will have to be included in each of the modules)
 they should be run for each including modules just for once.
 
+Realtime Debugging:
 You can use AddUserFunction to watch inner values while executing. for example; 
 string expr = $"return ({a})";
 fNode = module.AddUserFunction(expr);
 
-Now you can call fNode.Update() and inquire its ReturnValue.
+Now you can call fNode.Update() and inquire its ReturnValue after each run cycle immediately.
 
 Example usage: Create your own ScriptModule class deriving from ScriptModuleBase ;
-(Dont worry about CodeTypeEnum, it is just an int value to distinguish module types)
+(You pass an int value to group/search modules later which is handy, in this example it is default to 0)
+
+In the example below, m_a represents the library file of mA, similarly m_b represents the library file of mB.
+libModule is a global library which calculates factorial. Notice how module libraries are added to parent modules
+and global library to the compiler's library module before compilation.
+
+Note:
+Although we use the word 'compilation', this is of course not an actual compilation. It is used to indicate that
+we just safely load the modules to moonsharp and keep the returned function closures in the modules.
 
 LibraryModule libModule = new LibraryModule("libModule")
             {
@@ -31,21 +40,21 @@ LibraryModule libModule = new LibraryModule("libModule")
                 "
             };
 
-            ScriptModule m_a = new ScriptModule("ma", CodeTypeEnum.TICK)
+            ScriptModule m_a = new ScriptModule("ma", 0)
             {
                 Code = @"a = x + 8"
             };
-            ScriptModule mA = new ScriptModule("mA", CodeTypeEnum.TICK)
+            ScriptModule mA = new ScriptModule("mA", 0)
             {
                 Code = @"return a + 4"
             };
             mA.AddModule(m_a);
 
-            ScriptModule m_b = new ScriptModule("mb", CodeTypeEnum.TICK)
+            ScriptModule m_b = new ScriptModule("mb", 0)
             {
                 Code = @"b = fact(x)"
             };
-            ScriptModule mB = new ScriptModule("mB", CodeTypeEnum.TICK)
+            ScriptModule mB = new ScriptModule("mB", 0)
             {
                 Code = @"return b + 4"
             };
